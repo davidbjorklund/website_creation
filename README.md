@@ -1,8 +1,9 @@
 # Website Creation
 Code for high-school graduation project:
 > ## "Website creation using generative adversarial networks"
-> ** A study in the method of generating websites using AI and its effect on business **
+> **A study in the method of generating websites using AI and its effect on business**
 > By: [David Björklund](https://github.com/davidbjorklund)
+
 > At: [Värmdö Gymnasium](https://www.vgy.se/)
 
 ## Summary
