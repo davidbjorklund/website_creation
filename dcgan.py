@@ -12,29 +12,19 @@ from torch.utils.tensorboard import SummaryWriter
 
 class WebsiteDataSet(Dataset):
     def __init__(self, root_dir):
-        # Path to dataset csv file
-        self.annotations = pd.read_csv(root_dir + "WebScreenshots.csv")
+        # path to dataset csv file
+        self.annotations = pd.read_csv(root_dir + "WebScreenshotsTourism.csv")
         self.root_dir = root_dir
 
     def __len__(self):
-        return len(self.annotations) # 20'000
+        return len(self.annotations) # 5000
 
     def __getitem__(self, index):
-        if index >= self.__len__():
-            return self.__getitem__(index-2)
-        
         # path to image from dataset
-        img_path = os.path.join(self.root_dir, "screenshots-64x64/" + self.annotations.iloc[index, 1] + "/" + self.annotations.iloc[index, 0].replace("http://", "") + ".jpg")
+        img_path = os.path.join(self.root_dir, "screenshots-64x64/tourism/" + self.annotations.iloc[index, 0].replace("http://", "") + ".jpg")
 
-        img = io.imread(img_path)
+        img = io.imread(img_path, pilmode='RGB')
 
-        image_tensor = transforms.ToTensor()(img)
-
-        # Discard images with only 1 channel
-        if image_tensor.shape == (1, 64, 64):
-            return self.__getitem__(index+1)
-        
-        # transform image to tensor
         image = transforms.Compose([
             transforms.ToPILImage(),
             transforms.ToTensor(),
@@ -48,12 +38,12 @@ class WebsiteDataSet(Dataset):
 
 # Hyperparameters etc.
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-LEARNING_RATE = 2e-4
+LEARNING_RATE = 9e-5
 BATCH_SIZE = 32
 IMAGE_SIZE = 64
 CHANNELS_IMG = 3
 NOISE_DIM = 100
-NUM_EPOCHS = 30
+NUM_EPOCHS = 1000
 FEATURES_DISC = 64
 FEATURES_GEN = 64
 
@@ -149,9 +139,14 @@ def test():
     print("Success, tests passed!")
 
 
+def save_checkpoint(state, t):
+    filename = "./checkpoint/c-"+str(t)+".pth.tar"
+    torch.save(state, filename)
+
+
 dataset = WebsiteDataSet(root_dir = './data/')
 
-train_set, test_set = torch.utils.data.random_split(dataset, [19000, 1000])
+train_set, test_set = torch.utils.data.random_split(dataset, [4800, 200])
 
 dataloader = DataLoader(dataset = train_set, batch_size = BATCH_SIZE, shuffle = True)
 
@@ -167,6 +162,10 @@ criterion = nn.BCELoss()
 fixed_noise = torch.randn(BATCH_SIZE, NOISE_DIM, 1, 1).to(device)
 writer_real = SummaryWriter(f"logs/real")
 writer_fake = SummaryWriter(f"logs/fake")
+
+if (not os.path.exists("checkpoint")):
+    os.mkdir("checkpoint")
+
 step = 0
 
 if __name__ == "__main__":
@@ -204,15 +203,12 @@ for epoch in range(NUM_EPOCHS):
         if j == 0:
             print(f"Epoch [{epoch}/{NUM_EPOCHS}] Batch {batch_idx}/{len(dataloader)} \
                 Loss D: {loss_disc:.4f}, loss G: {loss_gen:.4f}")
-
-            with torch.no_grad():
-                fake = gen(fixed_noise)
-                # make grid of fixed noise generated images
-                img_grid_real = torchvision.utils.make_grid(real[:32], normalize=True)
-                img_grid_fake = torchvision.utils.make_grid(fake[:32], normalize=True)
-
-                writer_real.add_image("Real", img_grid_real, global_step=step)
-                writer_fake.add_image("Fake", img_grid_fake, global_step=step)
-
-            step += 1
+            if epoch >= NUM_EPOCHS/2 and epoch % int(NUM_EPOCHS / 20) == 0:
+                checkpoint = {'state_dict': gen.state_dict(), 'optimizer': opt_gen.state_dict()}
+                save_checkpoint(checkpoint, step)
+                with torch.no_grad():
+                    fake = gen(fixed_noise)
+                    img_grid_fake = torchvision.utils.make_grid(fake[:16], normalize=True)
+                    writer_fake.add_image("Fake", img_grid_fake, global_step=step)
+                step += 1
         j += 1
