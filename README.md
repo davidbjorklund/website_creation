@@ -11,8 +11,8 @@ Fahri Aydos. (2020). *WebScreenshots* [Data set]. [Kaggle](https://doi.org/10.34
 
 ## Example results
 ### Fake
-![Fake Gif](/result/fake.gif)
-![Fake PNG](/result/fake_29.png)
+![Generated V1](/result/t220-18-32/c9.png)
+![Generated V2](/result/t1000-9-32/c9.png)
 ### Real
 ![Real PNG](/result/real.png)
 
@@ -20,6 +20,9 @@ Fahri Aydos. (2020). *WebScreenshots* [Data set]. [Kaggle](https://doi.org/10.34
 - Python (Recommended 3.7+)
     - Pytorch
     - Torchvision
+    - Pandas
+    - OS
+    - IO
     - Sci-kit
 - Processing power (CPU)
     - Recommended GPU
@@ -30,3 +33,7 @@ Start training:
 
 Start tensorboard (after training, to see results)
 > tensorboard --logdir=logs
+
+Start inspection/test (after training, on files in /checkpoint/)
+> python test.py
+> (input the number of the module to test (from /checkpoint/))
